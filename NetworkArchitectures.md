@@ -1,0 +1,200 @@
+# Survey of Network Architectures
+
+- [CNNs Architectures: LeNet, AlexNet, VGG, GoogLeNet, ResNet and more …](https://medium.com/@siddharthdas_32104/cnns-architectures-lenet-alexnet-vgg-googlenet-resnet-and-more-666091488df5)
+
+## Input features
+
+- `LeNet-5` ([website](http://yann.lecun.com/exdb/lenet/), [paper](http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf))
+    - Date: 1998
+    - Depth: 5 _weight_ layers
+    - Architecture
+        - Input: `32x32x1` (Intensities)
+            - Mean normalization:
+                - Background (white) becomes `-0.1`
+                - Foreground (black) becomes `1.175`
+        - 2D convolution
+            - Kernel `5x5`
+            - Stride `1` (`1,1,1,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `6`
+            - Padding `valid`
+            - Activation `ReLU`
+        - Max pooling
+            - Kernel `2x2`
+            - Stride `1` (`1,1,1,1`)
+            - Padding `valid`
+
+- `AlexNet` ([paper](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf))
+    - Date: 2012
+    - Remarks
+        - Introduces Local Response Normalization (LRN)
+    - Architecture
+        - Input: `224x224x3` (RGB)
+            - Mean normalization
+                - Channel-wise means obtained from training set
+        - 2D convolution
+            - Kernel `11x11`
+            - Stride `4` (`1,4,4,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `96`
+            - Padding `valid`
+            - Activation `ReLU`
+
+- `VGG` ([paper](https://arxiv.org/abs/1409.1556))
+    - Date: 2014
+    - Depth: 11, 13, 16 or 19 _weight_ layers
+    - Remarks:
+        - All configurations use `3x3` convolutions for the input.
+        - Configurations `A`, `A-LRN`, `B`, `D` and `E` use `3x3` convolutions only.
+        - Configurations `C` uses `3x3` and `1x1` convolutions.
+    - Architecture
+        - Input: `224x224x3` (BGR)
+            - Mean normalization
+                - Channel-wise means obtained from training set
+                  (`R=123.68, G=116.779, B=103.939`)
+        - 2D convolution
+            - Kernel `3x3`
+            - Stride `1` (`1,1,1,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `64`
+            - Padding `same`
+            - Activation `ReLU`
+
+- `GoogLeNet` ([paper](https://www.cs.unc.edu/~wliu/papers/GoogLeNet.pdf))
+    - Date: 2015
+    - Depth: 22 layers
+    - Remarks
+        - Variation of the Inception architecture
+        - Aggressive cropping is performed on the input image, but may not be necessary in "real world applications", say the authors
+    - Training
+        - Loss
+            - Softmax probabilities are averaged over all crops of the input images
+        - Optimizer: `asynchronous SGD`
+            - Momentum: `0.9`
+        - Learning rate
+            - Decayed every eight epochs by `4%`
+        - [Polyak averaging](https://www.researchgate.net/publication/236736831_Acceleration_of_Stochastic_Approximation_by_Averaging) used to create final modal
+    - Architecture
+        - Input: `224x224x3` (RGB)
+            - Input augmentation
+                - Original image is resized to `256`, `288`, `320` and `352` shortest edge
+                - Squares (`256x256`, `288x288` etc. respetively) are taken from left/top, center and right/bottom
+                - For each square, crops of `224x224` are taken from each corner and the center; additionally, the square is resized to `224x224`
+                - The resulting image is used directly and mirrored
+                - This leads to `4 sizes x 3 squares x (5 crops + 1 resize) x 2 mirrors = 144` crops per input image
+            - "Zero mean"
+                - Not clear from the paper, implementations seem to use channel-wise means obtained from training set
+                  (`R=123.68, G=116.779, B=103.939`)
+        - 2D convolution
+            - Kernel `7x7`
+            - Stride `2` (`1,2,2,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `64`
+            - Padding `same`
+            - Activation `ReLU`
+
+- `Inception v3` ([paper](https://arxiv.org/abs/1512.00567))
+    - Date: 2015
+    - Remarks
+        - Different input sizes (`299x299`, `151x151` and `79x79`) were tried (the latter without max pooling) and top-1 ImageNet accurace was evaluated.
+        - Auxiliary classifiers (and losses) were used but only helped improve performance late in the training.
+        - Label smoothing is used to address noisy (i.e. wrong) class label assignments.
+        - See implementation [here](https://github.com/tensorflow/models/blob/f798e4b5504b0b7ed08f7b7a03fc5a79f00b9f21/research/inception/inception/slim/inception_model.py).
+    - Training
+        - Optimizer: `RMSProp`
+            - Decay: `0.9`
+            - Eta: `1.0`
+        - Learning rate: `0.045`
+            - Decayed every two epochs with exponential rate `0.94`
+        - Gradient clipping: threshold `2.0`
+    - Architecture
+        - Input: `299x299x3` (RGB)
+            - Range normalization to `-1 .. 1`
+                - Convert floating point in `0..1` (i.e. divide by `255.`)
+                - Subtract `0.5`
+                - Multiply with `2.0`
+        - 2D convolution
+            - Kernel `3x3`
+            - Stride `2` (`1,2,2,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `32`
+            - Padding `valid`
+            - Activation `ReLU`
+
+- `MobileNet` ([paper](https://arxiv.org/abs/1704.04861))
+    - Date: 2017
+    - Remarks
+        - Uses depthwise separable convolutions
+            - Depthwise convolution, followed by pointwise convolution
+            - See [this SO question](https://stackoverflow.com/questions/44226932/difference-between-tf-nn-conv2d-and-tf-nn-depthwise-conv2d) for clarification
+    - Architecture
+        - Input: `224x224x3` (RGB)
+        - 2D convolution
+            - Kernel `3x3`
+            - Stride `2` (`1,2,2,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `32`
+            - Padding `same`
+            - Batch normalization: before activation
+            - Activation `ReLU`
+        - 2D depthwise convolution
+            - Kernel `3x3`
+            - Stride `1` (`1,1,1,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features: `32 dw` (`1` per input feature)
+            - Padding `same`
+            - Batch normalization: before activation
+            - Activation `ReLU`
+        - 2D convolution
+            - Kernel `1x1`
+            - Stride `1` (`1,1,1,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `64`
+            - Padding `same`
+            - Batch normalization: before activation
+            - Activation `ReLU`
+
+- `Xception` ([paper](https://arxiv.org/abs/1610.02357))
+    - Date: 2017
+    - Remarks
+        - Combines Inception v3 with MobileNet
+        - All separable convolition use a depth multiplier of `1`, i.e. no depth expansion
+    - Training
+        - No auxiliary loss
+        - Regularization
+            - L2 regularization of strength `1e-5` (not validated, might be suboptimal)
+            - Dropout rate `0.5` before logistic regression
+        - Optimizer `RMSProp` (for training on ImageNet only)
+            - Momentum: `0.9`
+        - Learning rate: `0.045`
+            - Decayed every two epochs with exponential rate `0.94`
+    - Architecture
+        - Input: `229x229x3` (RGB)
+        - 2D convolution
+            - Kernel `3x3`
+            - Stride `2` (`1,2,2,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `32`
+            - Padding `same`
+            - Batch normalization: before activation
+            - Activation `ReLU`
+        - 2D convolution
+            - Kernel `3x3`
+            - Stride `1` (`1,1,1,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `64`
+            - Padding `same`
+            - Batch normalization: before activation
+            - Activation `ReLU`
+
+- `Mobilenet v2 x0.35` (x0.35 depth multiplier, [paper](https://arxiv.org/abs/1801.04381))
+    - Date: 2018
+    - Architecture
+        - Input: `224x224x3` (RGB)
+        - 2D convolution
+            - Kernel `3x3`
+            - Stride `2` (`1,2,2,1`)
+            - Dilation none (`1,1,1,1`)
+            - Output features `16`
+            - Padding `same`
+            - Activation `ReLU6` (see [here](https://www.tensorflow.org/api_docs/python/tf/nn/relu6))

@@ -158,7 +158,7 @@
     - Date: 2017
     - Remarks
         - Combines Inception v3 with MobileNet
-        - All separable convolition use a depth multiplier of `1`, i.e. no depth expansion
+        - All separable convolutions use a depth multiplier of `1`, i.e. no depth expansion
     - Training
         - No auxiliary loss
         - Regularization
